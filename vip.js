@@ -399,7 +399,7 @@ var utils = {
                         data.result.role = "vip";
                         data.result.vip_expires_at = Date.now() + 10 * 365 * 24 * 60 * 60 * 1000;
                         data.result.coin_balance = 999999999;
-                        data.result.name = "trong dep trai";
+                        data.result.name = "raydz";
                         Object.defineProperty(this, 'responseText', {
                             value: JSON.stringify(data)
                         });
