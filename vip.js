@@ -1,46 +1,56 @@
 (async () => {
-  const VERIFY_URL = "https://checkmoithu.site/key.txt"; // đổi domain của bạn
-  const STORAGE_KEY = "vip_key_user";
+  const VERIFY_URL = "https://checkmoithu.site/key.txt"; // <-- thay domain của bạn
+  const STORAGE_KEY = "vip_script_key";
 
+  // Hàm lấy key trên server
   async function getServerKey() {
-    const res = await fetch(VERIFY_URL + "?t=" + Date.now());
-    return (await res.text()).trim();
-  }
-
-  async function main() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const serverKey = await getServerKey();
-
-    let key = saved;
-    if (!key) key = prompt("Nhập key để sử dụng script:");
-
-    if (key.trim() === serverKey) {
-      localStorage.setItem(STORAGE_KEY, key);
-      console.log("✅ Key hợp lệ!");
-      runScript(); // ← Gọi hàm chính ở đây
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-      alert("❌ Key không hợp lệ hoặc đã bị thay đổi!");
+    try {
+      const res = await fetch(VERIFY_URL + "?t=" + Date.now());
+      return (await res.text()).trim();
+    } catch (e) {
+      alert("🚫 Không thể kết nối máy chủ để kiểm tra key!");
+      throw e;
     }
   }
 
-  function runScript() {
-    // === CODE CHÍNH CỦA BẠN Ở DƯỚI ===
-    console.log("Script VIP đang hoạt động...");
-    // ví dụ hiển thị banner nhỏ
-    const div = document.createElement('div');
-    div.innerText = "VIP Script Active!";
-    div.style.position = 'fixed';
-    div.style.bottom = '10px';
-    div.style.right = '10px';
-    div.style.padding = '10px';
-    div.style.background = 'green';
-    div.style.color = 'white';
-    document.body.appendChild(div);
+  // Hàm chính kiểm tra key
+  async function checkKey() {
+    const serverKey = await getServerKey();
+    let userKey = localStorage.getItem(STORAGE_KEY);
+
+    if (!userKey) {
+      userKey = prompt("🔑 Nhập key để kích hoạt script:");
+      if (!userKey) {
+        alert("❌ Bạn chưa nhập key!");
+        return false;
+      }
+    }
+
+    if (userKey.trim() === serverKey) {
+      localStorage.setItem(STORAGE_KEY, userKey.trim());
+      console.log("✅ Key hợp lệ, script sẽ được chạy!");
+      return true;
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+      alert("❌ Key không hợp lệ hoặc đã bị thay đổi!");
+      return false;
+    }
   }
 
-  await main();
+  // Chờ kiểm tra key xong mới chạy phần chính
+  if (await checkKey()) {
+    runMainScript(); // Chỉ chạy nếu key hợp lệ
+  }
+
+  // === CODE CHÍNH CỦA BẠN DƯỚI ĐÂY ===
+  function runMainScript() {
+    console.log("🎉 Script VIP đang chạy...");
+    // Ở đây là phần code chính bạn đã viết trước đó
+    // Ví dụ:
+    // document.body.style.border = "3px solid red";
+  }
 })();
+
 // Authentication system for user login
 function authenticateUser() {
     try {
