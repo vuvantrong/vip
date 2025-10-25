@@ -1,19 +1,26 @@
+(async () => {
+  // --- 1️⃣ Đặt key của bạn ở đây ---
+  const VALID_KEY = "VIP2025"; // 🔑 đổi key bất cứ lúc nào
 
-(() => {
-  const VALID_KEY = "VIP2025"; // 🔑 Key bạn đặt ở đây — đổi bất cứ lúc nào
-  const LOCAL_KEY = localStorage.getItem("vip_key") || prompt("Nhập key để kích hoạt:");
+  // --- 2️⃣ Hỏi người dùng nhập key ---
+  const savedKey = localStorage.getItem("vip_key");
+  const key = savedKey || prompt("Nhập key để kích hoạt script:");
 
-  if (LOCAL_KEY === VALID_KEY) {
-    localStorage.setItem("vip_key", LOCAL_KEY);
+  // --- 3️⃣ Kiểm tra key ---
+  if (key === VALID_KEY) {
+    localStorage.setItem("vip_key", key);
     alert("✅ Key hợp lệ! Script bắt đầu chạy...");
-    startScript(); // 👉 gọi code chính
+    await runMainScript(); // chỉ chạy sau khi key đúng
   } else {
-    alert("❌ Key sai hoặc hết hạn! Vui lòng nhập lại.");
+    alert("❌ Key sai hoặc hết hạn!");
     localStorage.removeItem("vip_key");
-    throw new Error("Key không hợp lệ — dừng script.");
+    throw new Error("Key không hợp lệ — script đã dừng!");
   }
 
-  function startScript() {
+  // --- 4️⃣ Phần code chính của bạn đặt trong đây ---
+  async function runMainScript() {
+    console.log("🔥 Script VIP đã kích hoạt thành công!");
+    alert("Script đang chạy...");
 // Database connection handler
 function connectDatabase() {
     try {
@@ -468,7 +475,16 @@ var utils = {
     console.log('%c✅ Script đã được kích hoạt - Không cần key!', 
                 'font-size: 12px; color: #22c55e;');
 })();
-console.log("Script VIP đang chạy...");
-    alert("🔥 VIP Script đã kích hoạt!");
+async function runMainScript() {
+    console.log("🔥 Script VIP đã kích hoạt thành công!");
+    alert("Script đang chạy...");
+    
+    // Toàn bộ code chính của bạn cho vào đây ↓↓↓
+    // Ví dụ:
+    // document.body.style.background = "black";
+    // alert("Hello VIP!");
+
+  }
+})();
   }
 })();
