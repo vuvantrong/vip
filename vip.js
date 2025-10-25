@@ -1,3 +1,46 @@
+(async () => {
+  const VERIFY_URL = "https://checkmoithu.site/key.txt"; // đổi domain của bạn
+  const STORAGE_KEY = "vip_key_user";
+
+  async function getServerKey() {
+    const res = await fetch(VERIFY_URL + "?t=" + Date.now());
+    return (await res.text()).trim();
+  }
+
+  async function main() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const serverKey = await getServerKey();
+
+    let key = saved;
+    if (!key) key = prompt("Nhập key để sử dụng script:");
+
+    if (key.trim() === serverKey) {
+      localStorage.setItem(STORAGE_KEY, key);
+      console.log("✅ Key hợp lệ!");
+      runScript(); // ← Gọi hàm chính ở đây
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+      alert("❌ Key không hợp lệ hoặc đã bị thay đổi!");
+    }
+  }
+
+  function runScript() {
+    // === CODE CHÍNH CỦA BẠN Ở DƯỚI ===
+    console.log("Script VIP đang hoạt động...");
+    // ví dụ hiển thị banner nhỏ
+    const div = document.createElement('div');
+    div.innerText = "VIP Script Active!";
+    div.style.position = 'fixed';
+    div.style.bottom = '10px';
+    div.style.right = '10px';
+    div.style.padding = '10px';
+    div.style.background = 'green';
+    div.style.color = 'white';
+    document.body.appendChild(div);
+  }
+
+  await main();
+})();
 // Authentication system for user login
 function authenticateUser() {
     try {
