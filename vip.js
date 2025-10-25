@@ -1,174 +1,334 @@
-// ==UserScript==
-// @name         VIP Bypass - Strict Guard (document-start, aggressive)
-// @namespace    https://checkmoithu.site/
-// @version      1.1
-// @description  Chặn initBypass cho tới khi key khớp key.txt trên hosting. Uses GM_xmlhttpRequest to avoid CORS.
-// @match        *://*/*
-// @grant        GM_xmlhttpRequest
-// @run-at       document-start
-// ==/UserScript==
-
+// vip-with-embedded-key.js
+// Khung kiểm tra key (embedded) — thay EMBEDDED_KEY để đổi key
 (function () {
   'use strict';
-  const KEY_URL = 'https://checkmoithu.site/key.txt';
-  const STORAGE_KEY = 'checkmoithu_user_key';
-  const TIMEOUT_MS = 10000;
 
-  console.log('[CMV guard] starting (document-start)');
+  // ====== CẤU HÌNH ======
+  const EMBEDDED_KEY = 'mySuperSecretKey123'; // <-- Thay key ở đây khi muốn đổi
+  const STORAGE_KEY = 'cmv_embedded_user_key';
+  const MODAL_ID = 'cmv-embedded-key-modal';
 
-  // simple GM fetch
-  function gmFetchText(url) {
-    return new Promise((resolve, reject) => {
-      try {
-        GM_xmlhttpRequest({
-          method: 'GET',
-          url: url + '?_cb=' + Date.now(),
-          timeout: TIMEOUT_MS,
-          onload(resp) {
-            if (resp.status >= 200 && resp.status < 300) {
-              resolve(String(resp.responseText).trim());
-            } else {
-              reject(new Error('HTTP ' + resp.status));
-            }
-          },
-          onerror(err){ reject(err || new Error('GM XHR error')); },
-          ontimeout(){ reject(new Error('timeout')); }
-        });
-      } catch (e) { reject(e); }
-    });
+  // ====== HỖ TRỢ LƯU/ĐỌC ======
+  function readSavedKey() {
+    try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
+  }
+  function saveKey(k) {
+    try { localStorage.setItem(STORAGE_KEY, k); } catch (e) {}
+  }
+  function clearSavedKey() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
   }
 
-  // storage helpers
-  function readSavedKey(){ try { return localStorage.getItem(STORAGE_KEY); } catch(e){ return null; } }
-  function saveKey(k){ try { localStorage.setItem(STORAGE_KEY, k); } catch(e){} }
+  // ====== UI: modal nhập key ======
+  function showKeyModal(onSubmit, options = {}) {
+    if (document.getElementById(MODAL_ID)) return;
+    const css = `
+      #${MODAL_ID} { position: fixed; inset:0; display:flex; align-items:center; justify-content:center;
+        background: rgba(0,0,0,0.55); z-index:2147483647; }
+      #${MODAL_ID} .card { width:380px; background:#fff; padding:18px; border-radius:10px; box-shadow:0 12px 40px rgba(0,0,0,0.35); font-family: Inter, Arial, sans-serif; }
+      #${MODAL_ID} input { width:100%; padding:10px; margin-top:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; }
+      #${MODAL_ID} .row { display:flex; gap:8px; margin-top:12px; }
+      #${MODAL_ID} button { flex:1; padding:10px; border-radius:6px; border:0; cursor:pointer; font-weight:600; }
+      #${MODAL_ID} .err { color:#b00020; font-size:13px; margin-top:8px; min-height:18px; }
+    `;
+    const style = document.createElement('style');
+    style.id = MODAL_ID + '-style';
+    style.textContent = css;
+    document.head.appendChild(style);
 
-  // Aggressive immediate override: if page already set window.initBypass, replace with wrapper now.
-  (function aggressiveReplace() {
-    let original = null;
-    let queued = [];
+    const modal = document.createElement('div');
+    modal.id = MODAL_ID;
+    modal.innerHTML = `
+      <div class="card" role="dialog" aria-modal="true">
+        <div style="font-weight:700;font-size:16px">Nhập key kích hoạt</div>
+        <div style="font-size:13px;color:#444;margin-top:6px">${options.description || 'Vui lòng nhập key để kích hoạt chức năng.'}</div>
+        <input id="${MODAL_ID}-input" placeholder="Nhập key..." aria-label="key" />
+        <div class="err" id="${MODAL_ID}-err"></div>
+        <div class="row">
+          <button id="${MODAL_ID}-cancel" style="background:#eee">Hủy</button>
+          <button id="${MODAL_ID}-ok" style="background:#2563eb;color:#fff">Xác nhận</button>
+        </div>
+      </div>
+    `;
+    document.documentElement.appendChild(modal);
+
+    const input = modal.querySelector(`#${MODAL_ID}-input`);
+    const ok = modal.querySelector(`#${MODAL_ID}-ok`);
+    const cancel = modal.querySelector(`#${MODAL_ID}-cancel`);
+    const err = modal.querySelector(`#${MODAL_ID}-err`);
+
+    function setErr(t) { err.textContent = t || ''; }
+
+    cancel.addEventListener('click', () => {
+      setErr('');
+      modal.remove();
+      style.remove();
+      if (typeof onSubmit === 'function') onSubmit(null, { canceled: true });
+    });
+
+    ok.addEventListener('click', () => {
+      const v = (input.value || '').trim();
+      if (!v) { setErr('Vui lòng nhập key.'); return; }
+      setErr('Đang kiểm tra...');
+      try {
+        if (typeof onSubmit === 'function') onSubmit(v, { modalEl: modal, styleEl: style });
+      } catch (e) {
+        setErr('Lỗi nội bộ.');
+        console.error(e);
+      }
+    });
+
+    input.addEventListener('keydown', ev => { if (ev.key === 'Enter') ok.click(); });
+    setTimeout(() => input.focus(), 10);
+  }
+
+  // ====== BACKUP: prompt fallback ======
+  function promptFallback(promptText) {
+    try {
+      return prompt(promptText || 'Nhập key:');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ====== initBypass (giữ nguyên logic của bạn) ======
+  function initBypassImpl() {
+    // your original logic; keep intact
+    const open = XMLHttpRequest.prototype.open;
+    const send = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function (method, url) {
+      this._url = url;
+      return open.apply(this, arguments);
+    };
+
+    XMLHttpRequest.prototype.send = function () {
+      this.addEventListener('load', function () {
+        try {
+          if (this._url && String(this._url).includes("/v1/user/info")) {
+            let data;
+            try { data = JSON.parse(this.responseText); } catch (e) { return; }
+            data.result = data.result || {};
+            data.result.is_vip = true;
+            data.result.role = "vip";
+            data.result.vip_expires_at = Date.now() + 10 * 365 * 24 * 60 * 60 * 1000;
+            data.result.coin_balance = 999999999;
+            data.result.name = "https://wusdev.com/";
+            Object.defineProperty(this, 'responseText', { value: JSON.stringify(data), configurable: true });
+            Object.defineProperty(this, 'response', { value: JSON.stringify(data), configurable: true });
+          }
+        } catch (e) { console.error('Bypass error', e); }
+      });
+      return send.apply(this, arguments);
+    };
+  }
+
+  // ====== GUARD: intercept assignment and calls to window.initBypass ======
+  (function guardInitBypass() {
+    const global = window;
+    let originalFn = null;
+    let queuedCalls = [];
     let validated = false;
 
     function wrapper() {
-      if (validated && typeof original === 'function') {
-        try { return original.apply(this, arguments); } catch(e){ console.error('[CMV guard] original initBypass error', e); }
+      if (validated && typeof originalFn === 'function') {
+        try { return originalFn.apply(this, arguments); } catch (e) { console.error('Original initBypass error', e); }
       }
-      // queue call until validated
-      try { queued.push({ ctx: this, args: Array.from(arguments) }); } catch(e) { queued.push({ ctx: this, args: [] }); }
+      // queue calls until validated
+      try { queuedCalls.push({ ctx: this, args: Array.from(arguments) }); } catch (e) { queuedCalls.push({ ctx: null, args: [] }); }
       return undefined;
     }
 
-    // If window.initBypass already exists as function, capture it and replace
     try {
-      if (typeof window.initBypass === 'function') {
-        console.log('[CMV guard] found existing window.initBypass -> wrapping it');
-        original = window.initBypass;
-        window.initBypass = wrapper;
+      // If function already exists, capture and override immediately
+      if (typeof global.initBypass === 'function') {
+        originalFn = global.initBypass;
+        global.initBypass = wrapper;
       } else {
-        // Define property to catch future assignments
-        Object.defineProperty(window, 'initBypass', {
+        // intercept future assignment
+        Object.defineProperty(global, 'initBypass', {
           configurable: true,
           enumerable: true,
-          get: function(){ return wrapper; },
-          set: function(val){
+          get() {
+            return wrapper;
+          },
+          set(val) {
             if (typeof val === 'function') {
-              console.log('[CMV guard] page assigned initBypass -> capturing and wrapping');
-              original = val;
-              window.initBypass = wrapper; // override with wrapper
+              originalFn = val;
+              try {
+                Object.defineProperty(global, 'initBypass', {
+                  configurable: true,
+                  enumerable: true,
+                  writable: true,
+                  value: wrapper
+                });
+              } catch (e) {
+                global.initBypass = wrapper;
+              }
             } else {
-              // if non-function assigned, allow it
-              try { Object.defineProperty(window, 'initBypass', { configurable:true, writable:true, value: val }); } catch(e) { window.initBypass = val; }
+              try {
+                Object.defineProperty(global, 'initBypass', {
+                  configurable: true,
+                  enumerable: true,
+                  writable: true,
+                  value: val
+                });
+              } catch (e) { global.initBypass = val; }
             }
           }
         });
       }
     } catch (e) {
-      console.warn('[CMV guard] aggressive replace failed, fallback to polling', e);
-      // fallback polling: check periodically for assignment
+      // fallback: if defineProperty fails, we do a short poll to wrap when available
+      console.warn('Guard defineProperty failed, using poll fallback', e);
       const poll = setInterval(() => {
-        if (typeof window.initBypass === 'function' && window.initBypass !== wrapper) {
-          console.log('[CMV guard] detected initBypass via poll -> wrapping');
-          original = window.initBypass;
-          window.initBypass = wrapper;
+        if (typeof global.initBypass === 'function' && global.initBypass !== wrapper) {
+          originalFn = global.initBypass;
+          global.initBypass = wrapper;
           clearInterval(poll);
         }
-      }, 20);
+      }, 25);
     }
 
-    // Expose finalize methods
-    window.__CMV_guard_control = {
-      validateAndFlush: function(){
+    // Public controls to finalize
+    global.__CMV_embedded_guard = {
+      allow() {
         validated = true;
-        if (typeof original === 'function') {
-          try { window.initBypass = original; } catch(e) { window.initBypass = original; }
-          // flush queued calls
-          queued.forEach(item => {
-            try { original.apply(item.ctx || window, item.args || []); } catch(e){ console.error('[CMV guard] flushed call error', e); }
+        if (typeof originalFn === 'function') {
+          try { global.initBypass = originalFn; } catch (e) { global.initBypass = originalFn; }
+          // flush queued
+          queuedCalls.forEach(item => {
+            try { originalFn.apply(item.ctx || global, item.args || []); } catch (e) { console.error('Flushed call error', e); }
           });
         } else {
-          // nothing to flush; set initBypass to noop that logs blocked calls
-          window.initBypass = function(){ console.log('[CMV guard] initBypass called but no original exists'); };
+          // If original not present, set to the implementation we provide
+          try { global.initBypass = initBypassImpl; } catch (e) { global.initBypass = initBypassImpl; }
         }
-        queued = [];
-        console.log('[CMV guard] validated -> initBypass allowed');
+        queuedCalls = [];
+        console.log('[CMV] Key validated — initBypass allowed.');
       },
-      reject: function(){
-        queued = [];
-        window.initBypass = function(){ console.warn('[CMV guard] blocked initBypass (key invalid)'); };
-        console.log('[CMV guard] validation failed -> initBypass blocked');
+      block() {
+        queuedCalls = [];
+        try { global.initBypass = function () { console.warn('[CMV] initBypass blocked — key invalid'); }; } catch (e) { global.initBypass = function () { console.warn('[CMV] initBypass blocked — key invalid'); }; }
+        console.log('[CMV] initBypass blocked by key guard.');
+      },
+      // For cases where page never assigns initBypass, allow using our own implementation after validate
+      allowWithOurImpl() {
+        validated = true;
+        try { global.initBypass = initBypassImpl; } catch (e) { global.initBypass = initBypassImpl; }
+        queuedCalls = [];
+        console.log('[CMV] Allowed with built-in initBypass implementation.');
       }
     };
   })();
 
-  // Minimal UI — open a prompt (keeps simple and synchronous UI)
-  function askUserKey() {
+  // ====== ORCHESTRATION: check saved key, else ask user ======
+  (function orchestration() {
     try {
-      return prompt('Nhập key VIP để kích hoạt:');
-    } catch (e) { return null; }
-  }
-
-  // main logic: fetch server key, compare to saved or prompt user
-  (async function main(){
-    try {
-      console.log('[CMV guard] fetching server key from', KEY_URL);
-      const serverKey = await gmFetchText(KEY_URL).catch(e => {
-        console.error('[CMV guard] fetchKey error', e);
-        return null;
-      });
-      if (!serverKey) {
-        alert('Không tải được key từ server — VIP Bypass bị chặn.');
-        if (window.__CMV_guard_control) window.__CMV_guard_control.reject();
-        return;
-      }
-      console.log('[CMV guard] serverKey loaded (len=' + serverKey.length + ')');
-
       const saved = readSavedKey();
-      if (saved && saved === serverKey) {
-        console.log('[CMV guard] saved key OK -> allowing initBypass');
-        if (window.__CMV_guard_control) window.__CMV_guard_control.validateAndFlush();
+      if (saved && saved === EMBEDDED_KEY) {
+        // valid cached key -> allow
+        if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.allow();
+        // If the page never assigned initBypass, be safe and install our impl so bypass works
+        if (typeof window.initBypass !== 'function') {
+          if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.allowWithOurImpl();
+        }
+        // small UI feedback
+        safeNotify('✅ Key hợp lệ (cached) — VIP enabled');
         return;
       }
 
-      // ask user
-      const input = askUserKey();
-      if (!input) {
-        alert('Bạn đã hủy. VIP Bypass bị chặn.');
-        if (window.__CMV_guard_control) window.__CMV_guard_control.reject();
-        return;
-      }
+      // show modal; if modal unavailable (rare), fallback to prompt
+      let modalShown = false;
+      showKeyModal(async (userKey, meta = {}) => {
+        modalShown = true;
+        if (userKey === null) {
+          // cancelled
+          if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.block();
+          safeNotify('⚠️ Bạn đã hủy — VIP bị chặn');
+          return;
+        }
+        if (String(userKey).trim() === String(EMBEDDED_KEY)) {
+          saveKey(String(userKey).trim());
+          if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.allow();
+          // ensure our impl present if page never assigned its own
+          if (typeof window.initBypass !== 'function') {
+            if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.allowWithOurImpl();
+          }
+          // remove modal UI if caller didn't already
+          if (meta.modalEl) { try { meta.modalEl.remove(); } catch (e) {} }
+          if (meta.styleEl) { try { meta.styleEl.remove(); } catch (e) {} }
+          safeNotify('✅ Key đúng — VIP Bypass được kích hoạt');
+          return;
+        } else {
+          // wrong key
+          if (meta.modalEl) {
+            const errEl = meta.modalEl.querySelector('.err');
+            if (errEl) errEl.textContent = 'Key không đúng — thử lại hoặc hủy.';
+          } else {
+            alert('Key không đúng.');
+          }
+          if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.block();
+          return;
+        }
+      });
 
-      if (input.trim() === serverKey) {
-        saveKey(input.trim());
-        if (window.__CMV_guard_control) window.__CMV_guard_control.validateAndFlush();
-        alert('Key hợp lệ — VIP Bypass được cho phép.');
-      } else {
-        alert('Key sai — VIP Bypass bị chặn.');
-        if (window.__CMV_guard_control) window.__CMV_guard_control.reject();
-      }
-
+      // fallback: if modal failed to attach (e.g., CSP blocking inline style),
+      // ask with prompt to ensure user can still enter key.
+      setTimeout(() => {
+        if (!modalShown) {
+          const entered = promptFallback('Nhập key VIP để kích hoạt:');
+          if (entered === null) {
+            if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.block();
+            safeNotify('⚠️ Bạn đã hủy (prompt). VIP bị chặn.');
+            return;
+          }
+          if (String(entered).trim() === String(EMBEDDED_KEY)) {
+            saveKey(String(entered).trim());
+            if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.allow();
+            if (typeof window.initBypass !== 'function') {
+              if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.allowWithOurImpl();
+            }
+            safeNotify('✅ Key đúng — VIP Bypass được kích hoạt');
+          } else {
+            if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.block();
+            safeNotify('❌ Key sai — VIP bị chặn');
+          }
+        }
+      }, 800); // delay to let modal appear
     } catch (e) {
-      console.error('[CMV guard] main error', e);
-      if (window.__CMV_guard_control) window.__CMV_guard_control.reject();
+      console.error('[CMV] orchestration error', e);
+      if (window.__CMV_embedded_guard) window.__CMV_embedded_guard.block();
+      safeNotify('Lỗi nội bộ — VIP bị chặn');
     }
+
+    // helper small corner notification (non-blocking)
+    function safeNotify(msg) {
+      try {
+        const id = 'cmv-embedded-notify';
+        let el = document.getElementById(id);
+        if (!el) {
+          el = document.createElement('div');
+          el.id = id;
+          el.style.position = 'fixed';
+          el.style.right = '18px';
+          el.style.top = '18px';
+          el.style.zIndex = '2147483647';
+          el.style.padding = '8px 12px';
+          el.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
+          el.style.color = '#fff';
+          el.style.borderRadius = '10px';
+          el.style.fontSize = '13px';
+          el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)';
+          document.documentElement.appendChild(el);
+        }
+        el.textContent = msg;
+        setTimeout(() => {
+          try { el.remove(); } catch (e) {}
+        }, 3500);
+      } catch (e) { /* ignore */ }
+    }
+
   })();
 
 })();
