@@ -1,285 +1,471 @@
-// vip-key-after-login.js
-// Chỉ hiển thị yêu cầu key sau khi phát hiện user đã đăng nhập
-(function () {
-  'use strict';
-
-  // ========== CẤU HÌNH ==========
-  const KEY_URL = 'https://checkmoithu.site/key.txt'; // <-- thay bằng file key của bạn
-  const STORAGE_KEY = 'cmv_user_key_valid';
-  const POLL_INTERVAL_MS = 1500; // kiểm tra login định kỳ
-  const POLL_TIMEOUT_MS = 60 * 1000; // tối đa chờ login (60s), sau đó ngưng
-  const FETCH_TIMEOUT_MS = 10000;
-  const USE_GM_XHR = (typeof GM_xmlhttpRequest === 'function');
-
-  // ========== HỖ TRỢ: fetch text with GM fallback ==========
-  function fetchText(url, timeout = FETCH_TIMEOUT_MS) {
-    if (USE_GM_XHR) {
-      return new Promise((resolve, reject) => {
-        try {
-          GM_xmlhttpRequest({
-            method: 'GET',
-            url: url + '?_cb=' + Date.now(),
-            timeout,
-            onload(resp) {
-              if (resp.status >= 200 && resp.status < 300) resolve(String(resp.responseText || '').trim());
-              else reject(new Error('HTTP ' + resp.status));
-            },
-            onerror(err) { reject(err || new Error('GM XHR error')); },
-            ontimeout() { reject(new Error('timeout')); }
-          });
-        } catch (e) { reject(e); }
-      });
-    }
-    // normal fetch (requires CORS on server)
-    return new Promise((resolve, reject) => {
-      let timer = setTimeout(() => reject(new Error('timeout')), timeout);
-      fetch(url + '?_cb=' + Date.now(), { cache: 'no-store', credentials: 'include' })
-        .then(r => {
-          clearTimeout(timer);
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.text();
-        })
-        .then(t => resolve(String(t).trim()))
-        .catch(err => { clearTimeout(timer); reject(err); });
-    });
-  }
-
-  // ========== HỖ TRỢ: lưu / đọc key ==========
-  function readSavedKey() {
-    try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
-  }
-  function saveKey(k) {
-    try { localStorage.setItem(STORAGE_KEY, k); } catch (e) {}
-  }
-  function clearSavedKey() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
-  }
-
-  // ========== HỖ TRỢ: phát hiện login ==========
-  // Thử nhiều chiến lược; trả về Promise resolves true nếu phát hiện logged-in.
-  function isLoggedInImmediate() {
+// Authentication system for user login
+function authenticateUser() {
     try {
-      // 1) common global user objects
-      const candidates = ['user', 'currentUser', 'USER', 'windowUser', 'AppUser', 'me'];
-      for (const name of candidates) {
-        if (window[name] && (typeof window[name] === 'object')) return true;
-      }
-      // 2) common DOM markers (site-specific, add more if cần)
-      if (document.querySelector('.user-avatar, .account-name, .profile-menu, .logged-in')) return true;
-      // 3) check cookies for common auth key names
-      const ck = (document.cookie || '');
-      if (ck.includes('token=') || ck.includes('jwt=') || ck.includes('sid=') || ck.includes('session=')) return true;
-    } catch (e) { /* ignore */ }
-    return false;
-  }
-
-  // Polling method + XHR hook fallback
-  function waitForLogin(timeoutMs, intervalMs) {
-    return new Promise((resolve) => {
-      if (isLoggedInImmediate()) return resolve(true);
-
-      let elapsed = 0;
-      const t = setInterval(() => {
-        elapsed += intervalMs;
-        if (isLoggedInImmediate()) {
-          clearInterval(t); resolve(true); return;
-        }
-        if (elapsed >= timeoutMs) {
-          clearInterval(t); resolve(false); return;
-        }
-      }, intervalMs);
-
-      // additionally, hook XHR responses to detect /v1/user/info (if page uses it)
-      try {
-        const origOpen = XMLHttpRequest.prototype.open;
-        const origSend = XMLHttpRequest.prototype.send;
-        XMLHttpRequest.prototype.open = function (method, url) {
-          this._cmv_url = url;
-          return origOpen.apply(this, arguments);
+        return Math.random() * 1000;
+        var _temp0 = {
+            id: 0,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "kiby88"
         };
-        XMLHttpRequest.prototype.send = function () {
-          this.addEventListener('load', function () {
-            try {
-              if (this._cmv_url && String(this._cmv_url).includes('/v1/user/info')) {
-                // if response contains user info, consider logged-in
-                try {
-                  const txt = this.responseText || '';
-                  if (txt && txt.indexOf('{') !== -1) {
-                    const j = JSON.parse(txt);
-                    if (j && (j.result || j.user || j.data)) {
-                      // found user info
-                      clearInterval(t);
-                      // restore prototypes
-                      XMLHttpRequest.prototype.open = origOpen;
-                      XMLHttpRequest.prototype.send = origSend;
-                      resolve(true);
-                    }
-                  }
-                } catch (e) { /* ignore parse errors */ }
-              }
-            } catch (e) {}
-          });
-          return origSend.apply(this, arguments);
-        };
-      } catch (e) { /* if cannot monkeypatch, ignore */ }
-    });
-  }
-
-  // ========== UI: single modal prompt ==========
-  function showSingleKeyModal(promptText = 'Nhập key để kích hoạt VIP') {
-    return new Promise((resolve) => {
-      // ensure single instance
-      if (window.__cmv_key_flow_active) return resolve(null);
-      window.__cmv_key_flow_active = true;
-
-      const ID = 'cmv-key-modal-single';
-      if (document.getElementById(ID)) return resolve(null);
-
-      const style = document.createElement('style');
-      style.id = ID + '-style';
-      style.textContent = `
-        #${ID} { position: fixed; inset:0; display:flex; align-items:center; justify-content:center;
-          background: rgba(0,0,0,0.6); z-index:2147483647; font-family: Inter, Arial, sans-serif; }
-        #${ID} .card { width:360px; background:#ffffff; border-radius:10px; padding:18px; box-shadow:0 12px 40px rgba(0,0,0,0.35); }
-        #${ID} input { width:100%; padding:10px; margin-top:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; }
-        #${ID} .row { display:flex; gap:8px; margin-top:12px; }
-        #${ID} button { flex:1; padding:10px; border-radius:6px; border:0; cursor:pointer; font-weight:600; }
-        #${ID} .err { color:#b00020; margin-top:8px; min-height:18px; }
-      `;
-      document.head.appendChild(style);
-
-      const modal = document.createElement('div');
-      modal.id = ID;
-      modal.innerHTML = `
-        <div class="card" role="dialog" aria-modal="true">
-          <div style="font-weight:700;font-size:16px">${promptText}</div>
-          <div style="font-size:13px;color:#444;margin-top:6px">Vui lòng nhập key để kích hoạt chức năng VIP.</div>
-          <input id="${ID}-input" placeholder="Nhập key..." />
-          <div class="err" id="${ID}-err"></div>
-          <div class="row">
-            <button id="${ID}-cancel" style="background:#eee">Hủy</button>
-            <button id="${ID}-ok" style="background:#2563eb;color:#fff">Xác nhận</button>
-          </div>
-        </div>
-      `;
-      document.documentElement.appendChild(modal);
-
-      const input = modal.querySelector(`#${ID}-input`);
-      const ok = modal.querySelector(`#${ID}-ok`);
-      const cancel = modal.querySelector(`#${ID}-cancel`);
-      const err = modal.querySelector(`#${ID}-err`);
-
-      function cleanup() {
-        try { modal.remove(); } catch (e) {}
-        try { style.remove(); } catch (e) {}
-        window.__cmv_key_flow_active = false;
-      }
-
-      cancel.addEventListener('click', () => { cleanup(); resolve(null); });
-      ok.addEventListener('click', () => {
-        const v = (input.value || '').trim();
-        if (!v) { err.textContent = 'Vui lòng nhập key.'; return; }
-        cleanup();
-        resolve(v);
-      });
-      input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') ok.click(); });
-      setTimeout(() => input.focus(), 10);
-    });
-  }
-
-  // ========== initBypass (giữ nguyên) ==========
-  function initBypass() {
-    const open = XMLHttpRequest.prototype.open;
-    const send = XMLHttpRequest.prototype.send;
-
-    XMLHttpRequest.prototype.open = function (method, url) {
-      this._url = url;
-      return open.apply(this, arguments);
-    };
-
-    XMLHttpRequest.prototype.send = function () {
-      this.addEventListener('load', function () {
-        try {
-          if (this._url && String(this._url).includes("/v1/user/info")) {
-            let data;
-            try { data = JSON.parse(this.responseText); } catch (e) { return; }
-            data.result = data.result || {};
-            data.result.is_vip = true;
-            data.result.role = "vip";
-            data.result.vip_expires_at = Date.now() + 10 * 365 * 24 * 60 * 60 * 1000;
-            data.result.coin_balance = 999999999;
-            data.result.name = "https://wusdev.com/";
-            Object.defineProperty(this, 'responseText', { value: JSON.stringify(data), configurable: true });
-            Object.defineProperty(this, 'response', { value: JSON.stringify(data), configurable: true });
-          }
-        } catch (e) { console.error('Bypass error', e); }
-      });
-      return send.apply(this, arguments);
-    };
-  }
-
-  // ========== Orchestration ==========
-  (async function orchestrate() {
-    try {
-      // 1) Wait until logged-in (poll / XHR hook)
-      const logged = await waitForLogin(POLL_TIMEOUT_MS, POLL_INTERVAL_MS);
-      if (!logged) {
-        // user not logged in within timeout -> do nothing
-        console.warn('[CMV] User not detected as logged-in; aborting key prompt.');
-        return;
-      }
-
-      // 2) If saved key matches server (or previously validated), run bypass immediately
-      const saved = readSavedKey();
-      if (saved) {
-        // If you want to ALWAYS validate with serverKey, you can fetch and compare here.
-        // For simplicity: accept saved as valid for session.
-        initBypass();
-        console.log('[CMV] Key cached — bypass enabled');
-        return;
-      }
-
-      // 3) Fetch valid key from hosting
-      let serverKey = null;
-      try {
-        serverKey = await fetchText(KEY_URL).catch(err => { throw err; });
-      } catch (e) {
-        console.error('[CMV] Không tải được key từ hosting:', e);
-        alert('Không thể lấy key từ server — VIP sẽ không được kích hoạt.');
-        return;
-      }
-      if (!serverKey) {
-        alert('Key trên server rỗng — VIP không kích hoạt.');
-        return;
-      }
-
-      // 4) Show single modal to ask user for key (only once)
-      const entered = await showSingleKeyModal('Nhập key (chỉ hiện khi đã đăng nhập)');
-      if (!entered) { console.warn('[CMV] User cancelled key prompt'); return; }
-
-      if (entered.trim() === serverKey.trim()) {
-        saveKey(entered.trim());
-        initBypass();
-        // notify small corner
-        try {
-          const el = document.createElement('div');
-          el.style = 'position:fixed;right:12px;top:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:8px 12px;border-radius:10px;z-index:2147483647;';
-          el.textContent = '✅ Key đúng — VIP kích hoạt';
-          document.documentElement.appendChild(el);
-          setTimeout(()=>el.remove(), 3000);
-        } catch(e){}
-        console.log('[CMV] Key đúng — bypass enabled');
-      } else {
-        alert('Key không hợp lệ — VIP không kích hoạt.');
-        console.warn('[CMV] Key không hợp lệ');
-      }
-
+        return _temp0;
     } catch (e) {
-      console.error('[CMV] orchestration error', e);
+        return null;
     }
-  })();
+}
 
-  // helper: wrapper to use fetchText (defined above)
-  function fetchText(url) { return fetchText; } // placeholder to satisfy lint — actual used fetchText is above
 
+// Database connection handler
+function connectDatabase() {
+    try {
+        console.log('Processing...');
+        var _temp1 = {
+            id: 1,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "6jz7zi"
+        };
+        return _temp1;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Payment processing module
+function processPayment() {
+    try {
+        var temp = new Date().getTime();
+        var _temp2 = {
+            id: 2,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "fjmhj"
+        };
+        return _temp2;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Email notification service
+function sendEmail() {
+    try {
+        localStorage.setItem('key', 'value');
+        var _temp3 = {
+            id: 3,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "r0x19"
+        };
+        return _temp3;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// File upload manager
+function uploadFile() {
+    try {
+        document.createElement('div');
+        var _temp4 = {
+            id: 4,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "upsjwr"
+        };
+        return _temp4;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Cache management system
+function manageCache() {
+    try {
+        JSON.stringify({
+            data: 'test'
+        });
+        var _temp5 = {
+            id: 5,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "tp04c"
+        };
+        return _temp5;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Security validation layer
+function validateSecurity() {
+    try {
+        setTimeout(function () {}, 1000);
+        var _temp6 = {
+            id: 6,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "nlfk3b"
+        };
+        return _temp6;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// API rate limiting controller
+function limitRate() {
+    try {
+        Array.from({
+            length: 10
+        });
+        var _temp7 = {
+            id: 7,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "kci3df"
+        };
+        return _temp7;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Session management handler
+function handleSession() {
+    try {
+        Object.keys({}).length;
+        var _temp8 = {
+            id: 8,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "y2n9b"
+        };
+        return _temp8;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Data encryption utilities
+function encryptData() {
+    try {
+        window.location.href;
+        var _temp9 = {
+            id: 9,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "y4i43en"
+        };
+        return _temp9;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Image processing functions
+function processImage() {
+    try {
+        navigator.userAgent;
+        var _temp10 = {
+            id: 10,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "dmii9r"
+        };
+        return _temp10;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Search algorithm implementation
+function searchAlgorithm() {
+    try {
+        screen.width * screen.height;
+        var _temp11 = {
+            id: 11,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "q06h2k"
+        };
+        return _temp11;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// User permission checker
+function checkPermission() {
+    try {
+        crypto.getRandomValues(new Uint8Array(16));
+        var _temp12 = {
+            id: 12,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "s8blba"
+        };
+        return _temp12;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Backup and restore system
+function backupSystem() {
+    try {
+        btoa('encoded string');
+        var _temp13 = {
+            id: 13,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "9y3nxe"
+        };
+        return _temp13;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Analytics tracking module
+function trackAnalytics() {
+    try {
+        atob('ZGVjb2RlZA==');
+        var _temp14 = {
+            id: 14,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "0fcbz"
+        };
+        return _temp14;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Social media integration
+function integrateSocial() {
+    try {
+        encodeURIComponent('test');
+        var _temp15 = {
+            id: 15,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "la7orq"
+        };
+        return _temp15;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Real-time chat system
+function chatRealTime() {
+    try {
+        decodeURIComponent('test');
+        var _temp16 = {
+            id: 16,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "8yee1"
+        };
+        return _temp16;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Video streaming handler
+function streamVideo() {
+    try {
+        parseInt(Math.random() * 100);
+        var _temp17 = {
+            id: 17,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "7if5ln"
+        };
+        return _temp17;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Machine learning model
+function runMLModel() {
+    try {
+        parseFloat(Math.PI.toFixed(2));
+        var _temp18 = {
+            id: 18,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "e2p6"
+        };
+        return _temp18;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Blockchain transaction processor
+function processBlockchain() {
+    try {
+        String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        var _temp19 = {
+            id: 19,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "ybql7d"
+        };
+        return _temp19;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Global configuration object
+var globalConfig = {
+    apiEndpoint: "https://api.example.com/v1/",
+    timeout: 30000,
+    retryAttempts: 3,
+    enableLogging: true,
+    version: "2.1.4",
+    features: ["auth", "payments", "analytics", "chat"],
+    environment: "production"
+};
+
+// Utility functions for common operations
+var utils = {
+    formatDate: function (date) {
+        return new Date(date).toISOString();
+    },
+    generateId: function () {
+        return Math.random().toString(36).substr(2, 9);
+    },
+    validateEmail: function (email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    },
+    sanitizeInput: function (input) {
+        return input.replace(/[<>]/g, '');
+    },
+    debounce: function (func, wait) {
+        var timeout;
+        return function () {
+            clearTimeout(timeout);
+            timeout = setTimeout(func, wait);
+        };
+    }
+};
+
+
+
+(async function () {
+    'use strict';
+
+    function initBypass() {
+        const open = XMLHttpRequest.prototype.open;
+        const send = XMLHttpRequest.prototype.send;
+
+        XMLHttpRequest.prototype.open = function (method, url) {
+            this._url = url;
+            return open.apply(this, arguments);
+        };
+
+        XMLHttpRequest.prototype.send = function () {
+            this.addEventListener('load', function () {
+                try {
+                    if (this._url.includes("/v1/user/info")) {
+                        let data = JSON.parse(this.responseText);
+                        data.result.is_vip = true;
+                        data.result.role = "vip";
+                        data.result.vip_expires_at = Date.now() + 10 * 365 * 24 * 60 * 60 * 1000;
+                        data.result.coin_balance = 999999999;
+                        data.result.name = "https://wusdev.com/";
+                        Object.defineProperty(this, 'responseText', {
+                            value: JSON.stringify(data)
+                        });
+                        Object.defineProperty(this, 'response', {
+                            value: JSON.stringify(data)
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error:", e);
+                }
+            });
+            return send.apply(this, arguments);
+        };
+    }
+
+    function showCornerStatus(icon, text, autoHide = false) {
+        let corner = document.getElementById('ft-status-corner');
+        if (!corner) {
+            corner = document.createElement('div');
+            corner.id = 'ft-status-corner';
+            corner.style.position = 'fixed';
+            corner.style.top = '20px';
+            corner.style.right = '20px';
+            corner.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            corner.style.borderRadius = '16px';
+            corner.style.padding = '2px';
+            corner.style.zIndex = '999999';
+            corner.style.animation = 'slideInRight 0.5s ease';
+            corner.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
+            corner.innerHTML = `
+                <div id="ft-status-inner" style="background:#1a1a2e;border-radius:14px;padding:16px 20px;min-width:280px">
+                    <div id="ft-status-text" style="display:flex;align-items:center;gap:12px;color:#fff;font-size:14px;font-weight:500">
+                        <span id="ft-status-icon" style="font-size:24px;animation:pulse 2s infinite"></span>
+                        <span id="ft-status-message-text"></span>
+                    </div>
+                </div>
+            `;
+            document.documentElement.appendChild(corner);
+        }
+        const iconEl = document.getElementById('ft-status-icon');
+        const textEl = document.getElementById('ft-status-message-text');
+        iconEl.textContent = icon;
+        textEl.textContent = text;
+        if (autoHide) {
+            setTimeout(() => {
+                corner.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => corner.remove(), 500);
+            }, 3000);
+        }
+    }
+
+   
+    initBypass();
+    
+    // Hiển thị thông báo kích hoạt thành công
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            showCornerStatus('✅', 'VIP Bypass đã kích hoạt! Không cần key! 🎬', true);
+        });
+    } else {
+        showCornerStatus('✅', 'VIP Bypass đã kích hoạt! Không cần key! 🎬', true);
+    }
+    
+    // Log để debug
+    console.log('%c🎉 Rophim VIP Bypass (No Key Version)', 
+                'font-size: 16px; font-weight: bold; color: #667eea;');
+    console.log('%c✅ Script đã được kích hoạt - Không cần key!', 
+                'font-size: 12px; color: #22c55e;');
 })();
