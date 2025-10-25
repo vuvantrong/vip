@@ -1,53 +1,29 @@
-// 1️⃣ --- Phần check key ---
 (async () => {
-  const VERIFY_URL = "https://yourdomain.com/key.txt"; // sửa lại link thật
-  const LS_KEY = "vip_key_v1";
+  const KEY_URL = "https://checkmoithu.site/key.txt"; // link file chứa key
+  const LOCAL_KEY = localStorage.getItem("vip_key") || prompt("Nhập key để kích hoạt:");
 
-  async function checkKey() {
-    const saved = localStorage.getItem(LS_KEY) || "";
-    const key = saved || prompt("Nhập key kích hoạt:");
-    const res = await fetch(VERIFY_URL + "?t=" + Date.now());
+  try {
+    const res = await fetch(KEY_URL + "?t=" + Date.now());
     const validKey = (await res.text()).trim();
-    if (key === validKey) {
-      localStorage.setItem(LS_KEY, key);
-      alert("✅ Key hợp lệ! Script được kích hoạt.");
-      return true;
-    } else {
-      alert("❌ Key sai hoặc đã hết hạn!");
-      localStorage.removeItem(LS_KEY);
-      window.location.href = "https://t.me/tenkenhcuaban"; // nơi lấy key
-      return false;
-    }
-  }
 
-  // 2️⃣ --- Chỉ chạy phần chính nếu key hợp lệ ---
-  if (await checkKey()) {
-    runMainScript(); // gọi hàm chính
+    if (LOCAL_KEY === validKey) {
+      localStorage.setItem("vip_key", LOCAL_KEY);
+      alert("✅ Key hợp lệ, script bắt đầu chạy!");
+      startScript(); // 👉 chỉ chạy phần chính nếu key đúng
+    } else {
+      alert("❌ Key không hợp lệ hoặc đã hết hạn!");
+      localStorage.removeItem("vip_key");
+    }
+  } catch (err) {
+    alert("⚠️ Lỗi kiểm tra key, vui lòng thử lại!");
   }
 })();
 
-// 3️⃣ --- Phần code chính để chạy sau khi xác thực ---
-function runMainScript() {
+function startScript() {
+  // === Code chính của bạn nằm trong đây ===
   console.log("Script VIP đang chạy...");
-  alert("🔥 VIP Script đã kích hoạt thành công!");
+  alert("🔥 Script VIP đã kích hoạt thành công!");
 }
-
-// Authentication system for user login
-function authenticateUser() {
-    try {
-        return Math.random() * 1000;
-        var _temp0 = {
-            id: 0,
-            timestamp: Date.now(),
-            random: Math.random(),
-            data: "kiby88"
-        };
-        return _temp0;
-    } catch (e) {
-        return null;
-    }
-}
-
 
 // Database connection handler
 function connectDatabase() {
