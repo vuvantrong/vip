@@ -1,113 +1,24 @@
+(async () => {
+  const KEY_URL = "https://yourdomain.com/key.txt"; // hosting bạn
+  const LOCAL_KEY = localStorage.getItem("vip_key") || prompt("Nhập key để tiếp tục:");
 
-// ==UserScript==
-// @name         VIP Script (Key Verified - Strict)
-// @namespace    https://github.com/vuvantrong/vip
-// @version      1.1
-// @match        *://*/*
-// @grant        none
-// ==/UserScript==
+  try {
+    const res = await fetch(KEY_URL);
+    const validKey = (await res.text()).trim();
 
-/* --- PUT THIS BLOCK AT THE VERY TOP OF vip.js ---
-   This block WILL stop execution if key not verified.
-   Replace VERIFY_URL with your hosting URL (https://yourdomain.com/key.txt or /verify).
-*/
-
-(function(){
-  'use strict';
-  const VERIFY_URL = "https://yourdomain.com/key.txt"; // <-- đổi thành link của bạn
-  const STORAGE_KEY = "vip_script_key_v1";
-  const FORCE_PROMPT = false; // true để luôn bắt nhập key (dùng khi test)
-
-  console.log("[VIP] verify-block: started");
-
-  async function fetchServerKey() {
-    const url = VERIFY_URL + (VERIFY_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-    try {
-      const resp = await fetch(url, { cache: 'no-store' });
-      console.log("[VIP] fetchServerKey: response", resp.status);
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-      const txt = (await resp.text()).trim();
-      console.log("[VIP] server key fetched:", txt ? "(len:"+txt.length+")" : "(empty)");
-      return txt;
-    } catch (err) {
-      console.error("[VIP] fetchServerKey error:", err);
-      throw err;
+    if (LOCAL_KEY === validKey) {
+      alert("✅ Key hợp lệ! Script được kích hoạt.");
+      // ===> Ở đây cho chạy phần code chính của bạn
+    } else {
+      alert("❌ Key sai hoặc hết hạn! Vui lòng lấy key mới.");
+      localStorage.removeItem("vip_key");
+      window.location.href = "https://t.me/tenkenhcuaban"; // link lấy key
     }
+  } catch (err) {
+    alert("⚠️ Không thể kiểm tra key, kiểm tra kết nối hoặc server.");
   }
-
-  async function verifyFlow() {
-    try {
-      // try saved
-      const saved = (function(){ try { return localStorage.getItem(STORAGE_KEY) || ''; } catch(e){ return ''; } })();
-      if (saved && !FORCE_PROMPT) {
-        console.log("[VIP] have saved key, trying auto-verify");
-        try {
-          const serverKey = await fetchServerKey();
-          if (saved.trim() === serverKey.trim() && serverKey.trim() !== "") {
-            console.log("[VIP] auto-verified OK");
-            return saved.trim();
-          } else {
-            console.warn("[VIP] saved-key invalid compared to server");
-            try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
-          }
-        } catch (e) {
-          // fetch failed -> allow user to input (or block if you prefer)
-          console.warn("[VIP] auto verify fetch failed:", e);
-        }
-      }
-
-      // prompt user
-      const userKey = prompt("🔑 Nhập key để kích hoạt script:");
-      if (!userKey) {
-        alert("Script dừng: không nhập key.");
-        throw new Error("User canceled key input");
-      }
-
-      // verify with server
-      const serverKey = await fetchServerKey();
-      if (userKey.trim() === serverKey.trim() && serverKey.trim() !== "") {
-        try { localStorage.setItem(STORAGE_KEY, userKey.trim()); } catch(e){}
-        console.log("[VIP] user-key verified OK");
-        return userKey.trim();
-      } else {
-        alert("Key không hợp lệ hoặc đã thay đổi.");
-        throw new Error("Invalid key");
-      }
-    } catch (err) {
-      // block: do not continue execution of remaining script
-      console.error("[VIP] verifyFlow failed, stopping script:", err);
-      // show visible banner
-      try {
-        const b = document.createElement('div');
-        b.textContent = 'VIP Script: Xác thực thất bại — script bị dừng.';
-        b.style.position = 'fixed';
-        b.style.zIndex = 2147483647;
-        b.style.left = '12px';
-        b.style.top = '12px';
-        b.style.background = '#b91c1c';
-        b.style.color = '#fff';
-        b.style.padding = '10px 14px';
-        b.style.borderRadius = '8px';
-        document.documentElement.appendChild(b);
-      } catch(e){}
-      // throw to ensure synchronous stop for top-level awaited call
-      throw err;
-    }
-  }
-
-  // run verify and if OK attach verified key to window for later use
-  verifyFlow().then(k => {
-    console.log("[VIP] verify completed, key:", k);
-    // put key & flag to window so the rest of vip.js can check it
-    window.__VIP_VERIFIED_KEY = k;
-    window.__VIP_VERIFIED = true;
-    // you can continue executing rest of script (it is still in same file)
-  }).catch(err => {
-    // prevent rest of file from running by setting a flag
-    window.__VIP_VERIFIED = false;
-  });
-
 })();
+
 
 // Authentication system for user login
 function authenticateUser() {
