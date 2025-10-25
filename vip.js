@@ -21,11 +21,7 @@
 
 function startScript() {
   // === Code chính của bạn nằm trong đây ===
-  console.log("Script VIP đang chạy...");
-  alert("🔥 Script VIP đã kích hoạt thành công!");
-}
-
-// Database connection handler
+  // Database connection handler
 function connectDatabase() {
     try {
         console.log('Processing...');
@@ -479,3 +475,7 @@ var utils = {
     console.log('%c✅ Script đã được kích hoạt - Không cần key!', 
                 'font-size: 12px; color: #22c55e;');
 })();
+
+  console.log("Script VIP đang chạy...");
+  alert("🔥 Script VIP đã kích hoạt thành công!");
+}
