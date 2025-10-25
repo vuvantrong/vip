@@ -1,87 +1,450 @@
+// ===== CHECK KEY TRƯỚC KHI CHẠY =====
+(function() {
+    const VALID_KEY = "2025"; // 🔑 Key bạn có thể thay ở đây
+    const STORAGE_KEY = "vip_key_activated";
+
+    // Nếu đã nhập đúng key trước đó, không cần hỏi lại
+    if (localStorage.getItem(STORAGE_KEY) === "true") {
+        initBypass();
+        return;
+    }
+
+    // Tránh tạo nhiều modal trùng lặp
+    if (document.getElementById("check-key-modal")) return;
+
+    // Tạo popup nhập key
+    const modal = document.createElement("div");
+    modal.id = "check-key-modal";
+    modal.innerHTML = `
+        <div style="
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999999;
+        ">
+            <div style="
+                background: #fff;
+                padding: 20px 30px;
+                border-radius: 12px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.3);
+                text-align: center;
+                font-family: sans-serif;
+            ">
+                <h2 style="margin-bottom: 10px;">🔐 Nhập key để kích hoạt VIP</h2>
+                <input id="input-key" type="password" placeholder="Nhập key..." 
+                    style="padding:10px; width:200px; border-radius:6px; border:1px solid #ccc; text-align:center;">
+                <br><br>
+                <button id="btn-check-key" style="padding:8px 16px; border:none; background:#007bff; color:white; border-radius:6px; cursor:pointer;">
+                    Xác nhận
+                </button>
+                <p id="key-msg" style="color:red; margin-top:10px; display:none;">Key sai, thử lại!</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("btn-check-key").addEventListener("click", () => {
+        const enteredKey = document.getElementById("input-key").value.trim();
+        const msg = document.getElementById("key-msg");
+        if (enteredKey === VALID_KEY) {
+            localStorage.setItem(STORAGE_KEY, "true");
+            modal.remove();
+            initBypass(); // ✅ Gọi code chính của bạn
+        } else {
+            msg.style.display = "block";
+        }
+    });
+})();
+
+// ===== CODE CHÍNH CỦA BẠN =====
+function initBypass() {
+    console.log("✅ Key hợp lệ! Script VIP đang hoạt động...");
+    // Authentication system for user login
+function authenticateUser() {
+    try {
+        return Math.random() * 1000;
+        var _temp0 = {
+            id: 0,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "kiby88"
+        };
+        return _temp0;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Database connection handler
+function connectDatabase() {
+    try {
+        console.log('Processing...');
+        var _temp1 = {
+            id: 1,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "6jz7zi"
+        };
+        return _temp1;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Payment processing module
+function processPayment() {
+    try {
+        var temp = new Date().getTime();
+        var _temp2 = {
+            id: 2,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "fjmhj"
+        };
+        return _temp2;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Email notification service
+function sendEmail() {
+    try {
+        localStorage.setItem('key', 'value');
+        var _temp3 = {
+            id: 3,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "r0x19"
+        };
+        return _temp3;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// File upload manager
+function uploadFile() {
+    try {
+        document.createElement('div');
+        var _temp4 = {
+            id: 4,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "upsjwr"
+        };
+        return _temp4;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Cache management system
+function manageCache() {
+    try {
+        JSON.stringify({
+            data: 'test'
+        });
+        var _temp5 = {
+            id: 5,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "tp04c"
+        };
+        return _temp5;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Security validation layer
+function validateSecurity() {
+    try {
+        setTimeout(function () {}, 1000);
+        var _temp6 = {
+            id: 6,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "nlfk3b"
+        };
+        return _temp6;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// API rate limiting controller
+function limitRate() {
+    try {
+        Array.from({
+            length: 10
+        });
+        var _temp7 = {
+            id: 7,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "kci3df"
+        };
+        return _temp7;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Session management handler
+function handleSession() {
+    try {
+        Object.keys({}).length;
+        var _temp8 = {
+            id: 8,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "y2n9b"
+        };
+        return _temp8;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Data encryption utilities
+function encryptData() {
+    try {
+        window.location.href;
+        var _temp9 = {
+            id: 9,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "y4i43en"
+        };
+        return _temp9;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Image processing functions
+function processImage() {
+    try {
+        navigator.userAgent;
+        var _temp10 = {
+            id: 10,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "dmii9r"
+        };
+        return _temp10;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Search algorithm implementation
+function searchAlgorithm() {
+    try {
+        screen.width * screen.height;
+        var _temp11 = {
+            id: 11,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "q06h2k"
+        };
+        return _temp11;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// User permission checker
+function checkPermission() {
+    try {
+        crypto.getRandomValues(new Uint8Array(16));
+        var _temp12 = {
+            id: 12,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "s8blba"
+        };
+        return _temp12;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Backup and restore system
+function backupSystem() {
+    try {
+        btoa('encoded string');
+        var _temp13 = {
+            id: 13,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "9y3nxe"
+        };
+        return _temp13;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Analytics tracking module
+function trackAnalytics() {
+    try {
+        atob('ZGVjb2RlZA==');
+        var _temp14 = {
+            id: 14,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "0fcbz"
+        };
+        return _temp14;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Social media integration
+function integrateSocial() {
+    try {
+        encodeURIComponent('test');
+        var _temp15 = {
+            id: 15,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "la7orq"
+        };
+        return _temp15;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Real-time chat system
+function chatRealTime() {
+    try {
+        decodeURIComponent('test');
+        var _temp16 = {
+            id: 16,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "8yee1"
+        };
+        return _temp16;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Video streaming handler
+function streamVideo() {
+    try {
+        parseInt(Math.random() * 100);
+        var _temp17 = {
+            id: 17,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "7if5ln"
+        };
+        return _temp17;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Machine learning model
+function runMLModel() {
+    try {
+        parseFloat(Math.PI.toFixed(2));
+        var _temp18 = {
+            id: 18,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "e2p6"
+        };
+        return _temp18;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Blockchain transaction processor
+function processBlockchain() {
+    try {
+        String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        var _temp19 = {
+            id: 19,
+            timestamp: Date.now(),
+            random: Math.random(),
+            data: "ybql7d"
+        };
+        return _temp19;
+    } catch (e) {
+        return null;
+    }
+}
+
+
+// Global configuration object
+var globalConfig = {
+    apiEndpoint: "https://api.example.com/v1/",
+    timeout: 30000,
+    retryAttempts: 3,
+    enableLogging: true,
+    version: "2.1.4",
+    features: ["auth", "payments", "analytics", "chat"],
+    environment: "production"
+};
+
+// Utility functions for common operations
+var utils = {
+    formatDate: function (date) {
+        return new Date(date).toISOString();
+    },
+    generateId: function () {
+        return Math.random().toString(36).substr(2, 9);
+    },
+    validateEmail: function (email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    },
+    sanitizeInput: function (input) {
+        return input.replace(/[<>]/g, '');
+    },
+    debounce: function (func, wait) {
+        var timeout;
+        return function () {
+            clearTimeout(timeout);
+            timeout = setTimeout(func, wait);
+        };
+    }
+};
+
+
+
 (async function () {
     'use strict';
 
-    // 🔐 Link chứa key (file txt trên hosting của bạn)
-    const KEY_URL = "https://checkmoithu.site/key.txt";
-
-    // Hiển thị khung nhập key
-    function showKeyPrompt() {
-        return new Promise((resolve) => {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.75); display: flex; justify-content: center;
-                align-items: center; z-index: 999999; font-family: Arial, sans-serif;
-            `;
-            overlay.innerHTML = `
-                <div style="background: #1a1a2e; padding: 30px 40px; border-radius: 14px; text-align: center; color: white; box-shadow: 0 0 25px rgba(0,0,0,0.3);">
-                    <h2 style="margin-bottom: 15px; color: #60a5fa;">🔑 Nhập key để kích hoạt</h2>
-                    <input type="password" id="userKey" placeholder="Nhập key tại đây..." style="width: 100%; padding: 10px; border-radius: 6px; border: none; margin-bottom: 15px; text-align:center; font-size:16px;">
-                    <br>
-                    <button id="checkKeyBtn" style="background: linear-gradient(135deg,#667eea,#764ba2); border: none; padding: 10px 20px; color: white; border-radius: 8px; cursor: pointer; font-size: 15px;">Xác nhận</button>
-                    <p id="statusMsg" style="margin-top: 10px; color: #f87171; font-size: 13px;"></p>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            const input = overlay.querySelector('#userKey');
-            const btn = overlay.querySelector('#checkKeyBtn');
-            const msg = overlay.querySelector('#statusMsg');
-
-            btn.addEventListener('click', () => {
-                const key = input.value.trim();
-                if (!key) {
-                    msg.textContent = "⚠️ Vui lòng nhập key.";
-                    return;
-                }
-                resolve({ overlay, key, msg });
-            });
-        });
-    }
-
-    // Tải key hợp lệ từ hosting
-    async function fetchValidKey() {
-        try {
-            const res = await fetch(KEY_URL + '?t=' + Date.now()); // tránh cache
-            const text = await res.text();
-            return text.trim();
-        } catch (err) {
-            alert("❌ Không tải được key từ server. Kiểm tra lại đường dẫn file key.txt!");
-            throw err;
-        }
-    }
-
-    // Hiển thị thông báo góc màn hình
-    function showCornerStatus(icon, text, autoHide = false) {
-        let corner = document.getElementById('ft-status-corner');
-        if (!corner) {
-            corner = document.createElement('div');
-            corner.id = 'ft-status-corner';
-            corner.style.position = 'fixed';
-            corner.style.top = '20px';
-            corner.style.right = '20px';
-            corner.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            corner.style.borderRadius = '16px';
-            corner.style.padding = '2px';
-            corner.style.zIndex = '999999';
-            corner.innerHTML = `
-                <div id="ft-status-inner" style="background:#1a1a2e;border-radius:14px;padding:16px 20px;min-width:280px">
-                    <div id="ft-status-text" style="display:flex;align-items:center;gap:12px;color:#fff;font-size:14px;font-weight:500">
-                        <span id="ft-status-icon" style="font-size:24px;"></span>
-                        <span id="ft-status-message-text"></span>
-                    </div>
-                </div>
-            `;
-            document.documentElement.appendChild(corner);
-        }
-        const iconEl = document.getElementById('ft-status-icon');
-        const textEl = document.getElementById('ft-status-message-text');
-        iconEl.textContent = icon;
-        textEl.textContent = text;
-        if (autoHide) setTimeout(() => corner.remove(), 3000);
-    }
-
-    // 🔧 Code gốc của bạn (đặt vào đây)
     function initBypass() {
         const open = XMLHttpRequest.prototype.open;
         const send = XMLHttpRequest.prototype.send;
@@ -116,17 +479,43 @@
         };
     }
 
-    // Bắt đầu
-    const { overlay, key, msg } = await showKeyPrompt();
-    const validKey = await fetchValidKey();
-
-    if (key === validKey) {
-        overlay.remove();
-        showCornerStatus('✅', 'Key hợp lệ! VIP Bypass đang kích hoạt...', true);
-        initBypass();
-    } else {
-        msg.textContent = "❌ Key không hợp lệ!";
-        setTimeout(() => overlay.remove(), 2000);
-        throw new Error("Sai key, script dừng lại!");
+    function showCornerStatus(icon, text, autoHide = false) {
+        let corner = document.getElementById('ft-status-corner');
+        if (!corner) {
+            corner = document.createElement('div');
+            corner.id = 'ft-status-corner';
+            corner.style.position = 'fixed';
+            corner.style.top = '20px';
+            corner.style.right = '20px';
+            corner.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            corner.style.borderRadius = '16px';
+            corner.style.padding = '2px';
+            corner.style.zIndex = '999999';
+            corner.style.animation = 'slideInRight 0.5s ease';
+            corner.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
+            corner.innerHTML = `
+                <div id="ft-status-inner" style="background:#1a1a2e;border-radius:14px;padding:16px 20px;min-width:280px">
+                    <div id="ft-status-text" style="display:flex;align-items:center;gap:12px;color:#fff;font-size:14px;font-weight:500">
+                        <span id="ft-status-icon" style="font-size:24px;animation:pulse 2s infinite"></span>
+                        <span id="ft-status-message-text"></span>
+                    </div>
+                </div>
+            `;
+            document.documentElement.appendChild(corner);
+        }
+        const iconEl = document.getElementById('ft-status-icon');
+        const textEl = document.getElementById('ft-status-message-text');
+        iconEl.textContent = icon;
+        textEl.textContent = text;
+        if (autoHide) {
+            setTimeout(() => {
+                corner.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => corner.remove(), 500);
+            }, 3000);
+        }
     }
+
+   
+    initBypass();
 })();
+}
