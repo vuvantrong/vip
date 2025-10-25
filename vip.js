@@ -1,6 +1,6 @@
 // ===== CHECK KEY TRƯỚC KHI CHẠY =====
 (function() {
-    const VALID_KEY = "2025"; // 🔑 Key bạn có thể thay ở đây
+    const VALID_KEY = "2024"; // 🔑 Key bạn có thể thay ở đây
     const STORAGE_KEY = "vip_key_activated";
 
     // Nếu đã nhập đúng key trước đó, không cần hỏi lại
