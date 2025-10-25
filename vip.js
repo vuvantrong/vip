@@ -1,55 +1,36 @@
-// === Short key-check (place at TOP of vip.js) ===
+// 1️⃣ --- Phần check key ---
 (async () => {
-  const VERIFY_URL = "https://checkmoithu.site/key.txt"; // <-- sửa lại
-  const LS_KEY = "vip_key_test_v1";
+  const VERIFY_URL = "https://yourdomain.com/key.txt"; // sửa lại link thật
+  const LS_KEY = "vip_key_v1";
 
-  function showMsg(msg, bg='#333') {
-    console.log('[VIP]', msg);
-    try {
-      const d = document.createElement('div');
-      d.textContent = 'VIP: ' + msg;
-      d.style.position = 'fixed';
-      d.style.right = '12px';
-      d.style.top = '12px';
-      d.style.zIndex = 2147483647;
-      d.style.background = bg;
-      d.style.color = '#fff';
-      d.style.padding = '8px 10px';
-      d.style.borderRadius = '8px';
-      document.documentElement.appendChild(d);
-      setTimeout(() => d.remove(), 4000);
-    } catch(e){}
+  async function checkKey() {
+    const saved = localStorage.getItem(LS_KEY) || "";
+    const key = saved || prompt("Nhập key kích hoạt:");
+    const res = await fetch(VERIFY_URL + "?t=" + Date.now());
+    const validKey = (await res.text()).trim();
+    if (key === validKey) {
+      localStorage.setItem(LS_KEY, key);
+      alert("✅ Key hợp lệ! Script được kích hoạt.");
+      return true;
+    } else {
+      alert("❌ Key sai hoặc đã hết hạn!");
+      localStorage.removeItem(LS_KEY);
+      window.location.href = "https://t.me/tenkenhcuaban"; // nơi lấy key
+      return false;
+    }
   }
 
-  try {
-    const saved = (localStorage.getItem(LS_KEY) || '').trim();
-    const serverResp = await fetch(VERIFY_URL + '?t=' + Date.now(), {cache: 'no-store'});
-    if (!serverResp.ok) throw new Error('HTTP ' + serverResp.status);
-    const serverKey = (await serverResp.text()).trim();
-    // if no saved key => ask
-    const key = saved || (prompt('Nhập key để kích hoạt script:') || '').trim();
-    if (!key) { showMsg('Không có key -> dừng.', '#b91c1c'); window.__VIP_VERIFIED = false; return; }
-
-    if (key === serverKey && serverKey !== '') {
-      try { localStorage.setItem(LS_KEY, key); } catch(e){}
-      showMsg('Key hợp lệ. Script sẽ chạy.', '#16a34a');
-      window.__VIP_VERIFIED = true;
-      window.__VIP_KEY = key;
-      // nếu bạn có hàm runMainScript, gọi nó
-      if (typeof runMainScript === 'function') {
-        try { runMainScript(key); } catch(e){ console.error(e); }
-      }
-    } else {
-      localStorage.removeItem(LS_KEY);
-      showMsg('Key sai hoặc đã đổi!', '#b91c1c');
-      window.__VIP_VERIFIED = false;
-    }
-  } catch (err) {
-    console.error('[VIP] check error', err);
-    showMsg('Lỗi kiểm tra key (xem console).', '#f59e0b');
-    window.__VIP_VERIFIED = false;
+  // 2️⃣ --- Chỉ chạy phần chính nếu key hợp lệ ---
+  if (await checkKey()) {
+    runMainScript(); // gọi hàm chính
   }
 })();
+
+// 3️⃣ --- Phần code chính để chạy sau khi xác thực ---
+function runMainScript() {
+  console.log("Script VIP đang chạy...");
+  alert("🔥 VIP Script đã kích hoạt thành công!");
+}
 
 // Authentication system for user login
 function authenticateUser() {
