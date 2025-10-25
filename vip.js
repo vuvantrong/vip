@@ -1,27 +1,20 @@
-(async () => {
-  const KEY_URL = "https://checkmoithu.site/key.txt"; // link file chứa key
+
+(() => {
+  const VALID_KEY = "VIP2025"; // 🔑 Key bạn đặt ở đây — đổi bất cứ lúc nào
   const LOCAL_KEY = localStorage.getItem("vip_key") || prompt("Nhập key để kích hoạt:");
 
-  try {
-    const res = await fetch(KEY_URL + "?t=" + Date.now());
-    const validKey = (await res.text()).trim();
-
-    if (LOCAL_KEY === validKey) {
-      localStorage.setItem("vip_key", LOCAL_KEY);
-      alert("✅ Key hợp lệ, script bắt đầu chạy!");
-      startScript(); // 👉 chỉ chạy phần chính nếu key đúng
-    } else {
-      alert("❌ Key không hợp lệ hoặc đã hết hạn!");
-      localStorage.removeItem("vip_key");
-    }
-  } catch (err) {
-    alert("⚠️ Lỗi kiểm tra key, vui lòng thử lại!");
+  if (LOCAL_KEY === VALID_KEY) {
+    localStorage.setItem("vip_key", LOCAL_KEY);
+    alert("✅ Key hợp lệ! Script bắt đầu chạy...");
+    startScript(); // 👉 gọi code chính
+  } else {
+    alert("❌ Key sai hoặc hết hạn! Vui lòng nhập lại.");
+    localStorage.removeItem("vip_key");
+    throw new Error("Key không hợp lệ — dừng script.");
   }
-})();
 
-function startScript() {
-  // === Code chính của bạn nằm trong đây ===
-  // Database connection handler
+  function startScript() {
+// Database connection handler
 function connectDatabase() {
     try {
         console.log('Processing...');
@@ -475,7 +468,7 @@ var utils = {
     console.log('%c✅ Script đã được kích hoạt - Không cần key!', 
                 'font-size: 12px; color: #22c55e;');
 })();
-
-  console.log("Script VIP đang chạy...");
-  alert("🔥 Script VIP đã kích hoạt thành công!");
-}
+console.log("Script VIP đang chạy...");
+    alert("🔥 VIP Script đã kích hoạt!");
+  }
+})();
