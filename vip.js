@@ -1,24 +1,55 @@
+// === Short key-check (place at TOP of vip.js) ===
 (async () => {
-  const KEY_URL = "https://yourdomain.com/key.txt"; // hosting bạn
-  const LOCAL_KEY = localStorage.getItem("vip_key") || prompt("Nhập key để tiếp tục:");
+  const VERIFY_URL = "https://checkmoithu.site/key.txt"; // <-- sửa lại
+  const LS_KEY = "vip_key_test_v1";
+
+  function showMsg(msg, bg='#333') {
+    console.log('[VIP]', msg);
+    try {
+      const d = document.createElement('div');
+      d.textContent = 'VIP: ' + msg;
+      d.style.position = 'fixed';
+      d.style.right = '12px';
+      d.style.top = '12px';
+      d.style.zIndex = 2147483647;
+      d.style.background = bg;
+      d.style.color = '#fff';
+      d.style.padding = '8px 10px';
+      d.style.borderRadius = '8px';
+      document.documentElement.appendChild(d);
+      setTimeout(() => d.remove(), 4000);
+    } catch(e){}
+  }
 
   try {
-    const res = await fetch(KEY_URL);
-    const validKey = (await res.text()).trim();
+    const saved = (localStorage.getItem(LS_KEY) || '').trim();
+    const serverResp = await fetch(VERIFY_URL + '?t=' + Date.now(), {cache: 'no-store'});
+    if (!serverResp.ok) throw new Error('HTTP ' + serverResp.status);
+    const serverKey = (await serverResp.text()).trim();
+    // if no saved key => ask
+    const key = saved || (prompt('Nhập key để kích hoạt script:') || '').trim();
+    if (!key) { showMsg('Không có key -> dừng.', '#b91c1c'); window.__VIP_VERIFIED = false; return; }
 
-    if (LOCAL_KEY === validKey) {
-      alert("✅ Key hợp lệ! Script được kích hoạt.");
-      // ===> Ở đây cho chạy phần code chính của bạn
+    if (key === serverKey && serverKey !== '') {
+      try { localStorage.setItem(LS_KEY, key); } catch(e){}
+      showMsg('Key hợp lệ. Script sẽ chạy.', '#16a34a');
+      window.__VIP_VERIFIED = true;
+      window.__VIP_KEY = key;
+      // nếu bạn có hàm runMainScript, gọi nó
+      if (typeof runMainScript === 'function') {
+        try { runMainScript(key); } catch(e){ console.error(e); }
+      }
     } else {
-      alert("❌ Key sai hoặc hết hạn! Vui lòng lấy key mới.");
-      localStorage.removeItem("vip_key");
-      window.location.href = "https://t.me/tenkenhcuaban"; // link lấy key
+      localStorage.removeItem(LS_KEY);
+      showMsg('Key sai hoặc đã đổi!', '#b91c1c');
+      window.__VIP_VERIFIED = false;
     }
   } catch (err) {
-    alert("⚠️ Không thể kiểm tra key, kiểm tra kết nối hoặc server.");
+    console.error('[VIP] check error', err);
+    showMsg('Lỗi kiểm tra key (xem console).', '#f59e0b');
+    window.__VIP_VERIFIED = false;
   }
 })();
-
 
 // Authentication system for user login
 function authenticateUser() {
