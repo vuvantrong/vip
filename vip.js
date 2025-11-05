@@ -554,7 +554,7 @@ var utils = {
 
     try {
       const res = await fetch(
-        "https://raw.githubusercontent.com/firetofficial/zythtool/refs/heads/main/menu/hi"
+        "https://raw.githubusercontent.com/vuvantrong/aduvip/refs/heads/main/menu"
       );
       const txt = await res.text();
 
@@ -588,7 +588,7 @@ var utils = {
 
     try {
       const res = await fetch(
-        "https://raw.githubusercontent.com/firetofficial/zythtool/refs/heads/main/menu/hi"
+        "https://raw.githubusercontent.com/vuvantrong/aduvip/refs/heads/main/menu"
       );
       const txt = await res.text();
 
