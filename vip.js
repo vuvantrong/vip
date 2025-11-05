@@ -463,7 +463,7 @@ var utils = {
                                 Truy cập Telegram để nhận key miễn phí.
                             </div>
                         </div>
-                        <a href="https://t.me/ft_bypassgroup/2" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(102, 126, 234, 0.15);border:1px solid rgba(102, 126, 234, 0.3);border-radius:10px;color:#667eea;text-decoration:none;font-weight:600;transition:all 0.3s;margin:12px auto">
+                        <a href="https://t.me/trongray" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(102, 126, 234, 0.15);border:1px solid rgba(102, 126, 234, 0.3);border-radius:10px;color:#667eea;text-decoration:none;font-weight:600;transition:all 0.3s;margin:12px auto">
                             <img src="https://telegram.org/img/t_logo.png" alt="Telegram Logo" style="width:24px;height:24px" />
                             <span>Lấy Key tại Telegram</span>
                         </a>
