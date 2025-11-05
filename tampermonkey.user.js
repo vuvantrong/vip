@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VIP Script
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Script test qua GitHub
 // @author       Raydz
 // @match        *://www.rophim.me/*
