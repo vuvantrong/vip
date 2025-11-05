@@ -1,5 +1,3 @@
-// ĐÂY LÀ CODE ĐÃ GIẢI MÃ / GỠ RỐI TỪ FILE rophim_vip.js
-
 // Authentication system for user login
 function authenticateUser() {
   try {
