@@ -2,7 +2,7 @@
 // @name         VIP Script
 // @namespace    http://tampermonkey.net/
 // @version      1.1
-// @description  Script test qua GitHub
+// @description  Script test qua GitHub (auto-update)
 // @author       Raydz
 // @match        *://www.rophim.me/*
 // @match        *://www.rophim.mx/*
