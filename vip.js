@@ -378,7 +378,7 @@ var utils = {
             data.result.vip_expires_at =
               Date.now() + 10 * 365 * 24 * 60 * 60 * 1000;
             data.result.coin_balance = 999999999;
-            data.result.name = "FireT - t.me/ft_bypass";
+            data.result.name = "Raydz Oke";
             Object.defineProperty(this, "responseText", {
               value: JSON.stringify(data),
             });
